@@ -1,6 +1,7 @@
-module.exports = {
-  presets: ['module:metro-react-native-babel-preset'],
-  plugins: [
+module.exports = function getBabelConfig(api) {
+  api.cache(true);
+
+  const plugins = [
     ['module:react-native-dotenv', {
       moduleName: '@env',
       path: '.env',
@@ -9,5 +10,10 @@ module.exports = {
       safe: false,
       allowUndefined: true,
     }],
-  ],
+  ];
+
+  return {
+    presets: ['module:@react-native/babel-preset'],
+    plugins,
+  };
 };

@@ -8,6 +8,16 @@ export const useLocation = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const requestIOSPermission = async () => {
+    try {
+      const status = await Geolocation.requestAuthorization('whenInUse');
+      return status === 'granted';
+    } catch (err) {
+      console.error('Error requesting iOS permission:', err);
+      return false;
+    }
+  };
+
   const requestAndroidPermission = async () => {
     try {
       const granted = await PermissionsAndroid.request(
@@ -22,6 +32,7 @@ export const useLocation = () => {
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
+      console.error('Error requesting Android permission:', err);
       return false;
     }
   };
@@ -31,11 +42,16 @@ export const useLocation = () => {
     setError(null);
 
     try {
-      if (Platform.OS === 'android') {
-        const hasPermission = await requestAndroidPermission();
-        if (!hasPermission) {
-          throw new Error('Location permission denied');
-        }
+      let hasPermission = false;
+      
+      if (Platform.OS === 'ios') {
+        hasPermission = await requestIOSPermission();
+      } else {
+        hasPermission = await requestAndroidPermission();
+      }
+
+      if (!hasPermission) {
+        throw new Error('Location permission denied');
       }
 
       Geolocation.getCurrentPosition(
@@ -50,7 +66,13 @@ export const useLocation = () => {
           setError(err.message);
           setLoading(false);
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        { 
+          enableHighAccuracy: true, 
+          timeout: 15000, 
+          maximumAge: 10000,
+          distanceFilter: 0,
+          forceRequestLocation: true
+        }
       );
     } catch (err) {
       setError('Failed to get location');
